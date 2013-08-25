@@ -261,3 +261,109 @@ next_object:
 
 	return enumerations;
 }
+
+gboolean eject(gchar* drive_dbus_path) {
+	g_type_init();
+
+	GDBusProxy* UD2_Drive_Proxy = NULL;
+	GError* error=NULL;
+
+	/* Is the drive ejectable? */
+	UD2_Drive_Proxy = g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
+		G_DBUS_PROXY_FLAGS_NONE,
+		NULL,
+		UD2_DBUS_NAME,
+		drive_dbus_path,
+		DBUS_PROP_IFACE,
+		NULL,
+		&error);
+
+	if (!UD2_Drive_Proxy) {
+		g_printerr("%s\n", error->message);
+		g_error_free(error);
+	}
+
+	GVariant* UD2_Ejectable = g_dbus_proxy_call_sync(	UD2_Drive_Proxy,
+							(gchar*) "Get",
+							g_variant_new(	"(ss)",
+									"org.freedesktop.UDisks2.Drive",
+									"Ejectable"
+							),
+							G_DBUS_CALL_FLAGS_NONE,
+							-1,
+							NULL,
+							&error);
+
+	if (!UD2_Ejectable) {
+		g_printerr("%s\n", error->message);
+		g_error_free(error);
+	}
+
+	GVariant* ejectable;
+	g_variant_get(UD2_Ejectable, "(v)", &ejectable);
+	g_assert_cmpstr(g_variant_get_type_string(ejectable), ==, "b");
+	gboolean is_ejectable = g_variant_get_boolean(ejectable);
+
+	g_variant_unref(ejectable);
+	g_variant_unref(UD2_Ejectable);
+	g_object_unref(UD2_Drive_Proxy);
+
+	if (FALSE==is_ejectable) {
+		g_printerr("%s is not an ejectable drive\n", drive_dbus_path);
+		return FALSE;
+	}
+
+	/* Proceed with the actual ejection */
+	g_print("Ejecting %s\n", drive_dbus_path);
+	GDBusProxy* FOO_PROXY= NULL;
+
+	/* Attempt to get a DBus proxy for the drive's UDisks2.Drive iface */
+	
+	FOO_PROXY= g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
+		G_DBUS_PROXY_FLAGS_NONE,
+		NULL,
+		UD2_DBUS_NAME,
+		drive_dbus_path,
+		UD2_DRIVE_IFACE,
+		NULL,
+		&error);
+
+	if (!FOO_PROXY) {
+		g_printerr("Couldn't get DBus proxy for %s:\n%s\n", drive_dbus_path, error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	/* We need to build a dictionary of options, albeit an empty one */
+	GVariant* dict_entry = g_variant_new_dict_entry( g_variant_new("s", "auth.no_user_interaction"), g_variant_new("b", TRUE));
+	GVariant* dict = g_variant_new_tuple(&dict_entry, 1);
+	g_print("%s\n", g_variant_print(dict, TRUE));
+	g_print("%s\n", g_variant_get_type_string(dict));
+
+	GVariant* UD2_Eject_Success = g_dbus_proxy_call_sync(	FOO_PROXY,
+							(gchar*) "Eject",
+							dict,
+							G_DBUS_CALL_FLAGS_NONE,
+							-1,
+							NULL,
+							&error);
+
+	if (!UD2_Eject_Success) {
+		g_printerr("foo %s\n", error->message);
+		g_error_free(error);
+	}
+
+	/*
+	GVariant* version_string;
+	g_variant_get(UD2_Eject_Success, "(v)", &version_string);
+	*/
+	/* version is allocated independently from the GVariants */
+	/*
+	gchar* version=g_variant_dup_string(version_string, NULL);
+
+	g_variant_unref(version_string);
+	*/
+	g_variant_unref(UD2_Eject_Success);
+	g_object_unref(FOO_PROXY);
+	return TRUE;
+}

@@ -29,7 +29,7 @@ SUCH DAMAGE.
 
 #include <stdlib.h>
 #include <unistd.h>
-#include "udenum.h"
+#include "udtools.h"
 #include "ud2_dbus.h"
 #include "udtools_config.h"
 
@@ -66,7 +66,7 @@ void print_version() {
 	g_free(udisks_version);
 }
 
-void enumerate_drives(enum OUTPUT_MODE mode, enum OPTION_FILTER ejectable_filter) {
+void enumerate_drives(enum UD_FORMAT mode, enum OPTION_FILTER ejectable_filter) {
 
 	g_assert(mode==DBUS_OBJECT_PATH || mode==DRIVE_NAME);
 	struct UD2_enumerations* enums = enum_objects();
@@ -104,7 +104,7 @@ void enumerate_drives(enum OUTPUT_MODE mode, enum OPTION_FILTER ejectable_filter
 	g_free(enums);
 }
 
-void enumerate_block_devices(enum BLOCK_TYPE block_type, enum OUTPUT_MODE mode, enum OPTION_FILTER filter) {
+void enumerate_block_devices(enum BLOCK_TYPE block_type, enum UD_FORMAT mode, enum OPTION_FILTER filter) {
 
 	/* Use the PreferredDevice property which should be a link under /dev */
 	struct UD2_enumerations* enums = enum_objects();
@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
 	enum OPTION_FILTER filesystem_filter = INDIFFERENT;
 	enum OPTION_FILTER ejectable_filter = INDIFFERENT;
 
-	enum OUTPUT_MODE output_mode=DEFAULT;
+	enum UD_FORMAT output_mode=DEFAULT;
 
 	int option=0;
 	opterr = 0;

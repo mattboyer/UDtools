@@ -19,15 +19,29 @@ if (GLIB2_FOUND)
 	link_directories (${GLIB2_LIBRARY_DIRS})
 endif (GLIB2_FOUND)
 
-set (	udtools_SRCS
+set (	udenum_SRCS
 	udenum.c
 	ud2_dbus.c
 )
-add_executable (udenum ${udtools_SRCS})
+
+set (	udeject_SRCS
+	udeject.c
+	ud2_dbus.c
+)
+
+set (	udpart_SRCS
+	udpart.c
+	ud2_dbus.c
+)
+add_executable (udenum ${udenum_SRCS})
+add_executable (udeject ${udeject_SRCS})
+add_executable (udpart ${udpart_SRCS})
 
 target_link_libraries (udenum glib-2.0 gobject-2.0 gio-2.0)
+target_link_libraries (udeject glib-2.0 gobject-2.0 gio-2.0)
+target_link_libraries (udpart glib-2.0 gobject-2.0 gio-2.0)
 
-install (TARGETS udenum RUNTIME DESTINATION bin)
+install (TARGETS udenum udeject udpart RUNTIME DESTINATION bin)
 install (FILES udcomplete.sh DESTINATION lib)
 
 # vim:set tabstop=8 softtabstop=8 shiftwidth=8 noexpandtab list:
